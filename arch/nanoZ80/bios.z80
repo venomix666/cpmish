@@ -1,0 +1,257 @@
+; nano-z80 cpmish BIOS © 2025 Henrik Löfgren
+; This file is distributable under the terms of the 2-clause BSD license.
+; See COPYING.cpmish in the distribution root directory for more information.
+
+    maclib cpm
+    maclib nanoZ80
+    maclib cpmish
+
+    cseg
+label BBASE
+
+; BIOS jump table.
+
+    jp BOOTE
+    jp WBOOTE
+    jp CONSTE
+    jp CONINE
+    jp CONOUTE
+    jp LISTE
+    jp PUNCHE
+    jp READERE
+    jp HOMEE
+    jp SELDSKE
+    jp SETTRKE
+    jp SETSECE
+    jp SETDMAE
+    jp READE
+    jp WRITEE
+    jp LISTSTE
+    jp SECTRANE
+
+; Actual BIOS entrypoints.
+;
+; The BIOS calls typically use a simple calling convention where the parameter
+; is in BC and the result is returned in A and HL. The docs don't mention
+; anything about other registers so we'll assume they can be corrupted. In
+; addition, our syscall stuff assumes that on return A = L, just like in the
+; BDOS, so we have a single parameter and a single response --- all very simple.
+        
+; Cold boot on system startup.
+BOOTE:
+    di
+    ld a, $1
+    out (ROM_DISABLE), a     ; disable ROM
+    ld sp, 0x0100            ; ephemeral startup stack
+    ei
+
+    ld a, $0                 ; set default IOBYTE (not implemented)
+    ld (IOBYTE), a
+    
+    xor a
+    ld (CDISK), a            ; clear current disk / user
+
+    ;ld a, (baudrate)         ; initialise serial hardware
+    ;out (PORT_SERIAL_BAUD), a
+
+    call print
+    db 0x1a                  ; clear screen
+    cpmish_banner 'nanoZ80'
+    db 0
+    ; fall through
+call_ccp:
+    ld a, 0xc3
+    ld hl, BBASE + 3         ; init BIOS entrypoint
+    ld (0x0000), a
+    ld (0x0001), hl
+
+    ld hl, FBASE + 6         ; init BDOS entrypoint
+    ld (0x0005), a
+    ld (0x0006), hl
+
+    ld a, (CDISK)            ; current selected disk
+    ld c, a
+    jp CBASE                 ; pass control to CCP
+
+;stop_disk_motor:
+;    in a, (PORT_BITPORT)
+;    or 0x40                  ; turn off motor
+;    out (PORT_BITPORT)
+;    ret
+
+;reset_disk_system:
+;    ld l, 0x03
+;    jp syscall
+
+; Warm boot on application exit.
+WBOOTE:
+    ld sp, 0x0100            ; ephemeral user stack
+
+    ld c, 0                  ; select drive 0
+    call SELDSKE
+    ld bc, 0
+    call SETTRKE             ; select track 0
+    
+    ld hl, CBASE             ; location to load
+    ld bc, 1                 ; first sector to load
+
+    ; We just load track 0 (first 8 kB)
+boot_loop:
+    push bc
+    push hl
+
+    call SETSECE             ; set sector to load
+
+    pop bc                   ; DMA address into BC
+    push bc
+    call SETDMAE             ; set address
+    call READE               ; actually load the sector
+
+    pop hl                   ; DMA address back into HL
+    ld bc, 128
+    add hl, bc
+
+    pop bc                   ; current sector back into bc
+    ld a, c
+    inc c
+    cp 63                    ; end of track 0
+    jr nz, boot_loop
+    jr call_ccp
+
+CONSTE:
+    in a, (UART_RX_AVAIL)
+    bit 0, a
+    ret z
+   
+    ld a, 0xff
+
+    ret
+
+CONINE:
+    in a, (UART_RX_AVAIL)
+    bit 0, a
+    jr z, CONINE
+
+    in a, (UART_RX_DATA)
+    
+    ret
+
+CONOUTE:
+    in a, (UART_TX_READY)
+    bit 0, a
+    jr z, CONOUTE
+    
+    ld a,c
+    out (UART_TX_DATA),a
+    
+    ret
+
+    ; Not implemented yet
+LISTE:
+    ; fall through
+PUNCHE:
+    ret
+
+LISTSTE:
+    ld a, 0xff
+    ret
+
+READERE:
+    ld a, 0x1a  ; Ctrl+z means not implemented
+    ret
+
+; Selects a drive, returning the address of the DPH in HL (or 0x0000 on
+; error).
+SELDSKE:
+    ld (BDISK), a
+    
+    ld hl, drive_a_dph
+    or a                        ; Test for 0
+    ret z
+
+    ld hl, 0
+    ret
+
+HOMEE:
+    ld bc, 0
+    ; fall through
+
+SETTRKE:
+    ld (BTRACK), bc
+    ret
+
+SETSECE:
+    ld (BSECTOR), bc
+    ret
+
+SETDMAE:
+    ld (BDMA), bc
+    ret
+
+READE:
+    ; To be implemented
+    ret
+
+WRITEE:
+    ; To be implemented
+    ret
+
+SECTRANE:
+    ld h, b
+    ld l, c
+    ret
+
+call_hl:
+    jp (hl)
+
+; Prints the text immediately following the call to print.
+print:
+    pop hl                   ; return address points to text to print
+    ld a, (hl)
+    inc hl
+    push hl                  ; save address after current char
+
+    or a
+    ret z                    ; if byte was zero, return
+    ld c, a
+    call CONOUTE
+    jr print
+
+
+drive_a_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVADPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_a_bitmap ; Allocation bitmap
+
+; The drive is sized so that each CP/M track occupies 256 physical sectors.
+; This makes the supervisor maths easier as we can just drop the bottom byte
+; from the LBA sector count. Each track is therefore 128kB.
+label DRVADPB
+    dw 128          ; Number of CP/M sectors per track
+    db 4, 15        ; BSH/BLM for 2048-byte blocks
+    db 0            ; EXM for 2048-byte allocation units and >255 blocks
+    dw DRIVE_A_BLOCKS-1 ; DSM
+    dw 127          ; DRM, one fewer than the number of directory entries
+    db 0xc0, 0x00   ; Initial allocation vector for one directory block
+    dw 0            ; Size of disk change check vector: zero as this is a fixed disk
+    dw 1            ; Number of reserved tracks
+
+drive_a_bitmap:
+    ds (DRIVE_A_BLOCKS+7) / 8
+dirbuf:
+    ds 128
+
+label BDISK 
+    db 0
+label BTRACK
+    dw 0
+label BSECTOR
+    dw 0
+label BDMA
+    dw 0
+       
+saved_stack: dw 0            ; user stack pointer while in system calls
+
