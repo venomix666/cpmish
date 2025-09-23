@@ -65,8 +65,8 @@ SD_DATA         equ $80         ; Start of data page ($80-$FF)
 DRIVE_A_SIZE = 1024             ; kB
 DRIVE_A_BLOCKS = DRIVE_A_SIZE / 2 ; 2 kB blocks 
 
-SD_OFFSET_4 = 0x01
-SD_OFFSET_3 = 0x00
+SD_OFFSET_3 = 0x01
 SD_OFFSET_2 = 0x00
-SD_OFFSET_1 = 0x01
+SD_OFFSET_1 = 0x00
+SD_OFFSET_0 = 0x00
 
