@@ -209,9 +209,9 @@ READE:
     call sd_wait
     ; Copy data to DMA
     ld hl, (BDMA)
-    ld a, 0
-    ld d, 0
-read_sector_copy:
+    ld a, (BSDPAGE)
+;    ld d, 0
+;read_sector_copy:
     out (SD_PAGE), a
     ld c, SD_DATA
 read_copy_loop: 
@@ -222,10 +222,6 @@ read_copy_loop:
     ld a, c
     cp a, 0
     jr nz, read_copy_loop
-    inc d
-    ld a, d
-    cp a, 4
-    jr nz, read_sector_copy
 
     call sd_init
     ;call print
@@ -237,11 +233,15 @@ read_copy_loop:
 WRITEE:
     call sd_init
     call calc_sd_addr
+
+    ; Read full page first
+    ld a, 0
+    out (SD_READ),a
+    call sd_wait
+
     ; Copy data from DMA
     ld hl, (BDMA)
-    ld a, 0
-    ld d, 0
-write_sector_copy:
+    ld a, (BSDPAGE)
     out (SD_PAGE), a
     ld c, SD_DATA
 write_copy_loop:
@@ -252,10 +252,6 @@ write_copy_loop:
     ld a, c
     cp a, 0
     jr nz, write_copy_loop
-    inc d
-    ld a, d
-    cp a, 4
-    jr nz, write_sector_copy
 
     ; Write strobe
     ld a,0
@@ -298,8 +294,15 @@ shift_loop:
     rl d
     djnz shift_loop
 
-    ; Add the sector
+    ; Add the sector divided by 4
     ld bc, (BSECTOR)
+    ld a,c
+    and a,0x03
+    ld (BSDPAGE),a
+    sra b
+    rr  c
+    sra b
+    rr  c
     add hl,bc
     jp nc, no_carry_sector
     inc d
@@ -365,6 +368,8 @@ label BDISK
 label BTRACK
     dw 0
 label BSECTOR
+    dw 0
+label BSDPAGE
     dw 0
 label BDMA
     dw 0
