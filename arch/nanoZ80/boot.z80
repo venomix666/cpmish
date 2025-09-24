@@ -22,3 +22,7 @@
 
         ; RAM page to load to
         db 0xe4
+
+        ; RAM page to boot from
+        db 0xfa
+        

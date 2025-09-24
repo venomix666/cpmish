@@ -55,20 +55,7 @@ diskimage(
         "submit.com": "cpmtools+submit",
         "bbcbasic.com": "third_party/bbcbasic+bbcbasic_ADM3A",
         "camel80.com": "third_party/camelforth",
-        "qe.com": "cpmtools+qe_KAYPROII",
+        "qe.com": "cpmtools+qe_SPECTRUM_NEXT",
     },
 )
 
-# Patches the special extra bit of BDOS/BIOS into the area above the
-# directory; yuch.
-#simplerule(
-#    name="diskimage",
-#    ins=[".+partialimg", ".+bootfile_mem"],
-#    outs=["=diskimage.img"],
-#    commands=[
-#        "cp {ins[0]} {outs[0]}",
-#        "chmod +w {outs[0]}",
-#        "dd if={ins[1]} of={outs[0]} bs=128 seek=56 skip=495 count=9 conv=notrunc 2> /dev/null",
-#    ],
-#    label="MKKAYPRO2",
-#)
