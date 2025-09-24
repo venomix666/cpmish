@@ -93,9 +93,9 @@ WBOOTE:
     call SETTRKE             ; select track 0
     
     ld hl, CBASE             ; location to load
-    ld bc, 1                 ; first sector to load
+    ld bc, 4                 ; first sector to load
 
-    ; We just load track 0 (first 8 kB)
+    ; Reload OS from disk
 boot_loop:
     push bc
     push hl
@@ -114,7 +114,7 @@ boot_loop:
     pop bc                   ; current sector back into bc
     ld a, c
     inc c
-    cp 63                    ; end of track 0
+    cp 56                    ; end of track 0
     jr nz, boot_loop
     jr call_ccp
 
