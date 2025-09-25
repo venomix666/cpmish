@@ -152,6 +152,7 @@ CONOUTE:
     jr z, CONOUTE
     
     ld a,c
+    and 0x7f ; Remove highest bit
     out (UART_TX_DATA),a
 ;CONOUTVID:
 ;    in a, (VID_BUSY_AVAIL)
