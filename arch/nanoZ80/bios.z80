@@ -119,21 +119,31 @@ boot_loop:
     jr call_ccp
 
 CONSTE:
+    in a, (KB_AVAIL)
+    or a
+    jr nz, CONST_AVAIL
+
     in a, (UART_RX_AVAIL)
     bit 0, a
     ret z
-   
+
+CONST_AVAIL:
     ld a, 0xff
 
     ret
 
 CONINE:
     in a, (UART_RX_AVAIL)
-    bit 0, a
-    jr z, CONINE
+    or a
+    jr z, CONINEUSB
 
     in a, (UART_RX_DATA)
-    
+    ret
+CONINEUSB:
+    in a, (KB_AVAIL)
+    or a
+    jr z, CONINE
+    in a, (KB_CHAR)
     ret
 
 CONOUTE:
@@ -143,7 +153,12 @@ CONOUTE:
     
     ld a,c
     out (UART_TX_DATA),a
-    
+;CONOUTVID:
+;    in a, (VID_BUSY_AVAIL)
+;    bit 0, a
+;    jr nz, CONOUTVID
+;    ld a,c
+    out (VID_WRITE_AVAIL),a
     ret
 
     ; Not implemented yet

@@ -70,3 +70,27 @@ SD_OFFSET_2 = 0x00
 SD_OFFSET_1 = 0x00
 SD_OFFSET_0 = 0x00
 
+; TTY/Video interface IO ports
+VID_LINE                equ $00         ; Line avaialble for editing
+VID_CURSOR_X            equ $01         ; Cursor X position
+VID_CURSOR_Y            equ $02         ; Cursor Y position
+VID_CURSOR_VIS          equ $03         ; Cursor visible
+VID_SCROLL_UP           equ $04         ; Scroll up strobe
+VID_SCROLL_DOWN         equ $05         ; Scroll down strobe
+VID_WRITE_CHAR          equ $06         ; Write character to TTY
+VID_BUSY                equ $07         ; TTY busy flag
+VID_CLEAR_TO_EOL        equ $08         ; Clear to EOL strobe
+VID_CLEAR_SCREEN        equ $09         ; Clear screen strobe
+VID_ENABLED             equ $0a         ; Enably tty functions
+VID_AUTOSCROLL          equ $0b         ; Enable autoscroll
+VID_FG_RED              equ $10         ; Foreground red
+VID_FG_GREEN            equ $11         ; Foreground green
+VID_FG_BLUE             equ $12         ; Foreground blue
+VID_BG_RED              equ $13         ; Background red
+VID_BG_GREEN            equ $14         ; Background green
+VID_BG_BLUE             equ $15         ; Background blue
+VID_LINE_DATA           equ $80         ; Data on current line ($80-$CF)
+VID_WRITE_AVAIL         equ $76         ; Always available TTY write
+VID_BUSY_AVAIL          equ $77         ; Always avaialble TTY busy 
+
+
