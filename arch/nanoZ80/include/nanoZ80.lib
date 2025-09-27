@@ -25,7 +25,8 @@ IO_SELECT_LEDS  equ $00         ; IO bank value for LEDs
 IO_SELECT_GPIO  equ $01         ; IO bank value for GPIO
 IO_SELECT_USB   equ $02         ; IO bank value for USB HID
 IO_SELECT_SD    equ $03         ; IO bank value for SD Card
-IO_SELECT_UART  equ $04		; IO bank value for UART B
+IO_SELECT_VID   equ $04		; IO bank for video controller
+IO_SELECT_UART  equ $05		; IO bank value for UART B
 ; LEDs IO ports
 LEDS_REG        equ $00         ; LED registers, bits 0-6 control one LED each
 WS2812_R        equ $01         ; WS2812 RED
