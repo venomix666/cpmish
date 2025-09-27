@@ -314,6 +314,14 @@ SELDSKE:
     dec a                       ; Test for 1
     ret z
     
+    ld hl, drive_c_dph
+    dec a                        ; Test for 2
+    ret z
+
+    ld hl, drive_d_dph          
+    dec a                       ; Test for 3
+    ret z
+    
     ld a, b                     ; Don't change disk 
     ld (BDISK), a
     ld hl, 0
@@ -503,6 +511,23 @@ drive_b_dph:
     dw 0            ; Disk change check vector
     dw drive_b_bitmap ; Allocation bitmap
 
+drive_c_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_c_bitmap ; Allocation bitmap
+
+drive_d_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_d_bitmap ; Allocation bitmap
+
+; Boot disk
 label DRVADPB
     dw 64           ; Number of CP/M sectors per track
     db 7, 127       ; BSH/BLM for 16384-byte blocks
@@ -513,6 +538,7 @@ label DRVADPB
     dw 0            ; Size of disk change check vector: zero as this is a fixed disk
     dw 1            ; Number of reserved tracks
 
+; Other disks
 label DRVBDPB
     dw 64
     db 7, 127
@@ -523,10 +549,16 @@ label DRVBDPB
     dw 0
     dw 0 
 
+
 drive_a_bitmap:
     ds (DRIVE_A_BLOCKS+7) / 8
 drive_b_bitmap:
     ds (DRIVE_B_BLOCKS+7) / 8
+drive_c_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_d_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+
 
 dirbuf:
     ds 128

@@ -102,9 +102,10 @@ diskdef generic-1m
     os 2.2
 end
 
+# 4 Meg format used for the nanoZ80
 diskdef nanoz80
     seclen 512
-    tracks 4096
+    tracks 512
     sectrk 16
     blocksize 16384
     maxdir 512
