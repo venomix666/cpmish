@@ -29,6 +29,20 @@ label BBASE
     jp LISTSTE
     jp SECTRANE
 
+; Default IOBYTE
+; The IO is mapped in the following way:
+; CRT: USB keyboard and HDMI output
+; TTY/LPT: UART header on carrier board
+; PTP/PTR/UC1: USB UART on Tang Nano 20k board
+;
+;                      LIST    PUNCH    READER    CONSOLE
+; 0x81 - 10 00 00 01 - LPT:    TTY:     TTY:      CRT:
+; 0x95 - 10 01 01 01 - LPT:    PTP:     PTR:      CRT:       
+; 0x80 - 10 00 00 00 - LPT:    TTY:     TTY:      TTY:
+; 0x83 - 10 00 00 11 - LTP:    TTY:     TTY:      UC1:
+; 0x97 - 10 01 01 11 - LTP:    PTP:     PTR:      UC1:
+ioconfig: db 0x83
+
 ; Actual BIOS entrypoints.
 ;
 ; The BIOS calls typically use a simple calling convention where the parameter
@@ -40,12 +54,12 @@ label BBASE
 ; Cold boot on system startup.
 BOOTE:
     di
-    ld a, $1
+    ld a, 0x01
     out (ROM_DISABLE), a     ; disable ROM
     ld sp, 0x0100            ; ephemeral startup stack
     ei
 
-    ld a, $0                 ; set default IOBYTE (not implemented)
+    ld a, (ioconfig)         ; set default IOBYTE
     ld (IOBYTE), a
     
     xor a
@@ -72,16 +86,6 @@ call_ccp:
     ld a, (CDISK)            ; current selected disk
     ld c, a
     jp CBASE                 ; pass control to CCP
-
-;stop_disk_motor:
-;    in a, (PORT_BITPORT)
-;    or 0x40                  ; turn off motor
-;    out (PORT_BITPORT)
-;    ret
-
-;reset_disk_system:
-;    ld l, 0x03
-;    jp syscall
 
 ; Warm boot on application exit.
 WBOOTE:
@@ -119,12 +123,29 @@ boot_loop:
     jr call_ccp
 
 CONSTE:
-    in a, (KB_AVAIL)
+    ld a, (IOBYTE)
+    and 0x03 ; Mask console bits
+    cp 0
+    jr nz, CONST_2
+    ; UART B
+    ld a, IO_SELECT_UART
+    out (IO_BANK), a
+    in a, (UART_B_RX_AVAIL)
     or a
     jr nz, CONST_AVAIL
-
+    ret
+CONST_2:
+    cp 0x03
+    jr nz, CONST_3
+    ; UART A
     in a, (UART_RX_AVAIL)
-    bit 0, a
+    or a
+    jr nz, CONST_AVAIL
+    ret
+CONST_3:
+    ; CRT
+    in a, (KB_AVAIL)
+    or a
     ret z
 
 CONST_AVAIL:
@@ -133,49 +154,150 @@ CONST_AVAIL:
     ret
 
 CONINE:
+    ld a, (IOBYTE)
+    and 0x03 ; Mask console bits
+    cp 0
+    jr nz, CONIN_2
+UART_B_CONIN:
+    ld a, IO_SELECT_UART
+    out (IO_BANK), a
+    in a, (UART_B_RX_AVAIL)
+    or a
+    jr z, UART_B_CONIN
+    in a, (UART_B_RX_DATA)
+    ret
+CONIN_2:
+    cp 0x03
+    jr nz, CONINEUSB
+UART_A_CONIN:
     in a, (UART_RX_AVAIL)
     or a
-    jr z, CONINEUSB
+    jr z, UART_A_CONIN
 
     in a, (UART_RX_DATA)
     ret
+; Default to CRT:
 CONINEUSB:
     in a, (KB_AVAIL)
     or a
-    jr z, CONINE
+    jr z, CONINEUSB
     in a, (KB_CHAR)
     ret
 
 CONOUTE:
+    ld a, (IOBYTE)
+    and 0x03 ; Mask console bits
+    cp 0
+    jr nz, CONOUT_2
+UART_B_CONOUT:
+    ld a, IO_SELECT_UART
+    out (IO_BANK), a
+    in a, (UART_B_TX_READY)
+    bit 0, a
+    jr z, UART_B_CONOUT
+    ld a, c
+    and 0x7f ; Remove highest bit
+    out (UART_B_TX_DATA), a
+    ret
+CONOUT_2:
+    cp 0x03
+    jr nz, CONOUT_3
+UART_A_CONOUT: 
     in a, (UART_TX_READY)
     bit 0, a
-    jr z, CONOUTE
-    
+    jr z, UART_A_CONOUT 
     ld a,c
     and 0x7f ; Remove highest bit
     out (UART_TX_DATA),a
-;CONOUTVID:
-;    in a, (VID_BUSY_AVAIL)
-;    bit 0, a
-;    jr nz, CONOUTVID
-;    ld a,c
-    out (VID_WRITE_AVAIL),a
+    ret
+CONOUT_3:
+    ; Default to CRT
+    ld a,c
+    and 0x7f ; Remove highest bit
+    out (VID_WRITE_X),a
     ret
 
-    ; Not implemented yet
 LISTE:
-    ; fall through
+    ld a,(IOBYTE)
+    and 0xc0 ; Mask list bits
+    ; Send to UART B unless CRT: is selected
+    cp 0x40
+    jr nz, LIST_UART_B
+    ld a, c
+    out (VID_WRITE_X),a
+    ret
+LIST_UART_B:
+    ld a,IO_SELECT_UART
+    out (IO_BANK), a
+    in a, (UART_B_TX_READY)
+    or a
+    jr z, LIST_UART_B
+    ld a, c
+    out (UART_B_TX_DATA), a
+    ret
+
 PUNCHE:
+    ld a, (IOBYTE)
+    and 0x30 ; Mask punch bits
+    or a
+    jr nz, PUNCH_UART_A
+    ld a, IO_SELECT_UART
+    out (IO_BANK), a
+PUNCH_UART_B:
+    in a, (UART_B_TX_READY)
+    or a
+    jr z, PUNCH_UART_B
+         
+    ld a, c
+    out (UART_B_TX_DATA), a
+    ret
+PUNCH_UART_A:
+    in a, (UART_TX_READY)
+    or a
+    jr z, PUNCH_UART_A
+    
+    ld a, c
+    out (UART_TX_DATA), a
     ret
 
 LISTSTE:
+    ld a, (IOBYTE)
+    and 0xc0 ; Mask list bits
+    cp 0x40
+    jr nz, LISTST_UART_B
+    ; CRT is always ready
+    ld a, 0xff
+    ret
+LISTST_UART_B:
+    ld a, IO_SELECT_UART
+    out (IO_BANK), a
+    in a, (UART_B_TX_READY)
+    or a
+    ret z
     ld a, 0xff
     ret
 
 READERE:
-    ld a, 0x1a  ; Ctrl+z means not implemented
+    ld a, (IOBYTE)
+    and 0x0c ; Mask reader bits
+    or a
+    jr nz, READER_UART_A
+    ld a, IO_SELECT_UART
+    out (IO_BANK), a
+READER_UART_B:
+    in a, (UART_B_RX_AVAIL)
+    or a
+    jr z, READER_UART_B
+    
+    in a, (UART_B_RX_DATA)
+    ret 
+READER_UART_A:
+    in a, (UART_RX_AVAIL)
+    or a
+    jr z, READER_UART_A
+    
+    in a, (UART_RX_DATA)
     ret
-
 ; Selects a drive, returning the address of the DPH in HL (or 0x0000 on
 ; error).
 SELDSKE:
