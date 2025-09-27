@@ -56,6 +56,8 @@ diskimage(
         "bbcbasic.com": "third_party/bbcbasic+bbcbasic_ADM3A",
         "camel80.com": "third_party/camelforth",
         "qe.com": "cpmtools+qe_SPECTRUM_NEXT",
+        "rawdisk.com": "cpmtools+rawdisk",
+        "mkfs.com": "cpmtools+mkfs",
     },
 )
 
