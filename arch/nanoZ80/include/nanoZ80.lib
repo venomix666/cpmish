@@ -68,8 +68,8 @@ SD_TYPE         equ $09         ; SD card type
 SD_DATA         equ $80         ; Start of data page ($80-$FF)
 
 ; Disk definitions
-DRIVE_A_SIZE = 1024             ; kB
-DRIVE_A_BLOCKS = DRIVE_A_SIZE / 2 ; 2 kB blocks 
+DRIVE_A_SIZE = 32*1024             ; kB
+DRIVE_A_BLOCKS = DRIVE_A_SIZE / 16 ;/ 2 ; 2 kB blocks 
 
 DRIVE_B_SIZE = 32*1024		; kB
 DRIVE_B_BLOCKS = DRIVE_B_SIZE / 16 ; 16 kB blocks

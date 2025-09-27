@@ -44,7 +44,7 @@ unix2cpm(name="readme", src="README.md")
 
 diskimage(
     name="diskimage",
-    format="generic-1m",
+    format="nanoz80",
     bootfile=".+bootfile",
     map={
         "-readme.txt": ".+readme",

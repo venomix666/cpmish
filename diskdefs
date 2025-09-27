@@ -102,5 +102,16 @@ diskdef generic-1m
     os 2.2
 end
 
+diskdef nanoz80
+    seclen 512
+    tracks 4096
+    sectrk 16
+    blocksize 16384
+    maxdir 512
+    boottrk 1
+    os 2.2
+end
+
+
 # vim: set ts=4 sw=4 expandtab
 
