@@ -12,7 +12,7 @@ zmac(
     name="bios",
     src="./bios.z80",
     deps=[
-        "arch/nanoZ80/include/nanoZ80.lib",
+        "arch/nano-z80/include/nano-z80.lib",
         "include/cpm.lib",
         "include/cpmish.lib",
         ".+addresses",
@@ -23,7 +23,7 @@ zmac(
     name="tty",
     src="./tty.z80",
     deps=[
-        "arch/nanoZ80/include/nanoZ80.lib",
+        "arch/nano-z80/include/nano-z80.lib",
         "include/cpm.lib",
         "include/cpmish.lib",
         "arch/common/utils/tty.lib",

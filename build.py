@@ -10,6 +10,6 @@ export(
         "wp1.img": "arch/brother/wp1+diskimage",
         "kayproii.img": "arch/kayproii+diskimage",
         "nc200.img": "arch/nc200+diskimage",
-        "nanoZ80.img": "arch/nanoZ80+diskimage"
+        "nano-z80.img": "arch/nano-z80+diskimage"
     },
 )

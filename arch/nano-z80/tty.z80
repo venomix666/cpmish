@@ -4,7 +4,7 @@
 
     maclib cpm
     maclib cpmish
-    maclib nanoZ80
+    maclib nano-z80
 
     extrn SYSIN
     extrn SYSOUT
