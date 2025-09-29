@@ -5,9 +5,11 @@
     maclib cpm
     maclib nanoZ80
     maclib cpmish
-
+    maclib addresses
+    extern TTYPUTC
+    extern TTYINIT
     cseg
-label BBASE
+;label BBASE
 
 ; BIOS jump table.
 
@@ -41,7 +43,7 @@ label BBASE
 ; 0x80 - 10 00 00 00 - LPT:    TTY:     TTY:      TTY:
 ; 0x83 - 10 00 00 11 - LTP:    TTY:     TTY:      UC1:
 ; 0x97 - 10 01 01 11 - LTP:    PTP:     PTR:      UC1:
-ioconfig: db 0x83
+ioconfig: db 0x81
 
 ; Actual BIOS entrypoints.
 ;
@@ -67,7 +69,11 @@ BOOTE:
 
     ;ld a, (baudrate)         ; initialise serial hardware
     ;out (PORT_SERIAL_BAUD), a
-
+    ;ld a, IO_SELECT_VID
+    ;out (IO_BANK), a
+    ;ld a, 0
+    ;out (VID_AUTOSCROLL), a
+    call TTYINIT
     call print
     db 0x1a                  ; clear screen
     cpmish_banner 'nanoZ80'
@@ -214,7 +220,8 @@ CONOUT_3:
     ; Default to CRT
     ld a,c
     and 0x7f ; Remove highest bit
-    out (VID_WRITE_X),a
+    ;out (VID_WRITE_X),a
+    jp TTYPUTC
     ret
 
 LISTE:

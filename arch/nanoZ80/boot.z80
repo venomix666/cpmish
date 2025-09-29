@@ -18,11 +18,11 @@
         db 0x01
 
         ; Image length
-        db 0x0d
+        db 0x0e
 
         ; RAM page to load to
-        db 0xe4
+        db 0xe2
 
         ; RAM page to boot from
-        db 0xfa
+        db 0xf8
         
