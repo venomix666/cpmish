@@ -43,6 +43,16 @@ void con_goto(uint16_t x, uint16_t y)
 			cpm_printstring0(buffer);
 			cpm_bios_conout('H');
 		}
+    #elif defined LIBCUSS_ROBOTRON
+        if (!x && !y)
+            cpm_bios_conout(LIBCUSS_HOME);
+        else
+        {
+            static uint8_t gotoseq[] = "\033xx";
+            gotoseq[1] = y + 0x80;
+            gotoseq[2] = x + 0x80;
+            cpm_printstring0((char*) gotoseq);
+        }
 	#else
         #error "No libcuss configuration specified."
     #endif

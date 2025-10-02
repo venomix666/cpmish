@@ -53,11 +53,14 @@ extern void con_revoff(void);
 	#define SCREENWIDTH 80
 	#define SCREENHEIGHT 25
 	#define LIBCUSS_ADM3
+#elif defined LIBCUSS_RT1715W
+    #define SCREENWIDTH 80
+    #define SCREENHEIGHT 24
+    #define LIBCUSS_ROBOTRON
 #elif defined LIBCUSS_NANOZ80
 	#define SCREENWIDTH 80
 	#define SCREENHEIGHT 30
 	#define LIBCUSS_ADM3
-
 #else
     #error "No libcuss configuration specified."
 #endif
@@ -105,6 +108,18 @@ extern void con_revoff(void);
     #define LIBCUSS_KEY_DOWN "\012"
     #define LIBCUSS_KEY_UP "\013"
     #define LIBCUSS_KEY_RIGHT "\014"
+#endif
+
+#if defined LIBCUSS_ROBOTRON
+    #define LIBCUSS_HOME '\x01'
+    #define LIBCUSS_CLEAR "\x0c"
+    #define LIBCUSS_CLEAREOL "\x16"
+    #define LIBCUSS_NEWLINE "\r\n"
+
+    #define LIBCUSS_KEY_LEFT "\x08"
+    #define LIBCUSS_KEY_DOWN "\x07"
+    #define LIBCUSS_KEY_UP "\x09"
+    #define LIBCUSS_KEY_RIGHT "\x06"
 #endif
 
 #endif
