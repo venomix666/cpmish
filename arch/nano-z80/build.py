@@ -74,6 +74,7 @@ diskimage(
         "rawdisk.com": "cpmtools+rawdisk",
         "mkfs.com": "cpmtools+mkfs",
         "baudrate.com": "arch/nano-z80/tools+baudrate",
+        "nanoterm.com": "arch/nano-z80/tools+nanoterm",
     },
 )
 

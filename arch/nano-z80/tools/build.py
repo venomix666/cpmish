@@ -1,4 +1,5 @@
 from third_party.zmac.build import zmac
+from build.ack import ackprogram
 
 zmac(
     name="baudrate",
@@ -9,3 +10,7 @@ zmac(
     ],
 )
 
+ackprogram(
+    name="nanoterm",
+    srcs=["./nanoterm.c", "./uart.s"],
+)
