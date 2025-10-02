@@ -20,14 +20,16 @@ By default, only drive `A:` is formatted. To use the additional drives, run `mkf
 
 UART B (the one on the TTL UART header) supports changing baudrates, this can be done either using the `baudrate.com` tool or from inside `nanoterm`.
 
-IO byte
+Modifying the IO byte at boot
 --------------
 The IO is mapped in the following way:
 - CRT: USB keyboard and HDMI output
 - TTY/LPT: UART header on carrier board
 - PTP/PTR/UC1: USB UART on Tang Nano 20k board
 
-The default value is 0x81. It can be modified according to the table below before booting by first loading to image from the SD-card using the `L` command in the monitor and then writing to address 0xF833 by running for instance `WF833,83` to redirect the console to the USB UART, and then booting by running `JF800`.
+The default value is 0x81, so that the HDMI output and USB keyboard is used for the console. It can be modified according to the table below before booting by first loading to image from the SD-card using the `L` command in the monitor and then writing to address 0xF833 by running for instance `WF833,83` to redirect the console to the USB UART, and then booting by running `JF800`. 
+
+As the monitor is diplayed both on the USB UART and the HDMI-output/USB-keyboard by default, this can be useful when running with no external display connected.
 ```
                      LIST    PUNCH    READER    CONSOLE  
 0x81 - 10 00 00 01 - LPT:    TTY:     TTY:      CRT:  
