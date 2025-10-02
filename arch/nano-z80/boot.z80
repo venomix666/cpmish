@@ -12,7 +12,7 @@
         db 0x6f
 
         ; Image SD card sector
-        db 0x01
+        db 0x00
         db 0x00
         db 0x00
         db 0x01
