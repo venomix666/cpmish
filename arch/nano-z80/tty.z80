@@ -84,7 +84,7 @@ tty_clear_to_eos:
     out (VID_CLEAR_TO_EOS), a
     ret ;jp tty_update_cursor
 
-
+; This is soooo ugly, but it works for now
 video_init:
     ld a, IO_SELECT_VID
     out (IO_BANK), a

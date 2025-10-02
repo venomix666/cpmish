@@ -67,12 +67,6 @@ BOOTE:
     xor a
     ld (CDISK), a            ; clear current disk / user
 
-    ;ld a, (baudrate)         ; initialise serial hardware
-    ;out (PORT_SERIAL_BAUD), a
-    ;ld a, IO_SELECT_VID
-    ;out (IO_BANK), a
-    ;ld a, 0
-    ;out (VID_AUTOSCROLL), a
     call TTYINIT
     call print
     db 0x1a                  ; clear screen
@@ -128,6 +122,7 @@ boot_loop:
     jr nz, boot_loop
     jr call_ccp
 
+; CONST
 CONSTE:
     ld a, (IOBYTE)
     and 0x03 ; Mask console bits
@@ -159,12 +154,14 @@ CONST_AVAIL:
 
     ret
 
+; CONIN
 CONINE:
     ld a, (IOBYTE)
     and 0x03 ; Mask console bits
     cp 0
     jr nz, CONIN_2
 UART_B_CONIN:
+    ; UART B
     ld a, IO_SELECT_UART
     out (IO_BANK), a
     in a, (UART_B_RX_AVAIL)
@@ -176,13 +173,14 @@ CONIN_2:
     cp 0x03
     jr nz, CONINEUSB
 UART_A_CONIN:
+    ; UART A
     in a, (UART_RX_AVAIL)
     or a
     jr z, UART_A_CONIN
 
     in a, (UART_RX_DATA)
     ret
-; Default to CRT:
+    ; Default to CRT:
 CONINEUSB:
     in a, (KB_AVAIL)
     or a
@@ -190,12 +188,14 @@ CONINEUSB:
     in a, (KB_CHAR)
     ret
 
+; CONOUT
 CONOUTE:
     ld a, (IOBYTE)
     and 0x03 ; Mask console bits
     cp 0
     jr nz, CONOUT_2
 UART_B_CONOUT:
+    ; UART B
     ld a, IO_SELECT_UART
     out (IO_BANK), a
     in a, (UART_B_TX_READY)
@@ -208,7 +208,8 @@ UART_B_CONOUT:
 CONOUT_2:
     cp 0x03
     jr nz, CONOUT_3
-UART_A_CONOUT: 
+UART_A_CONOUT:
+    ; UART A 
     in a, (UART_TX_READY)
     bit 0, a
     jr z, UART_A_CONOUT 
@@ -224,6 +225,7 @@ CONOUT_3:
     jp TTYPUTC
     ret
 
+; LIST
 LISTE:
     ld a,(IOBYTE)
     and 0xc0 ; Mask list bits
@@ -243,6 +245,7 @@ LIST_UART_B:
     out (UART_B_TX_DATA), a
     ret
 
+; PUNCH
 PUNCHE:
     ld a, (IOBYTE)
     and 0x30 ; Mask punch bits
@@ -251,6 +254,7 @@ PUNCHE:
     ld a, IO_SELECT_UART
     out (IO_BANK), a
 PUNCH_UART_B:
+    ; UART B
     in a, (UART_B_TX_READY)
     or a
     jr z, PUNCH_UART_B
@@ -259,6 +263,7 @@ PUNCH_UART_B:
     out (UART_B_TX_DATA), a
     ret
 PUNCH_UART_A:
+    ; UART A
     in a, (UART_TX_READY)
     or a
     jr z, PUNCH_UART_A
@@ -267,6 +272,7 @@ PUNCH_UART_A:
     out (UART_TX_DATA), a
     ret
 
+; LIST
 LISTSTE:
     ld a, (IOBYTE)
     and 0xc0 ; Mask list bits
@@ -284,6 +290,7 @@ LISTST_UART_B:
     ld a, 0xff
     ret
 
+; READER
 READERE:
     ld a, (IOBYTE)
     and 0x0c ; Mask reader bits
@@ -292,6 +299,7 @@ READERE:
     ld a, IO_SELECT_UART
     out (IO_BANK), a
 READER_UART_B:
+    ; UART B
     in a, (UART_B_RX_AVAIL)
     or a
     jr z, READER_UART_B
@@ -299,6 +307,7 @@ READER_UART_B:
     in a, (UART_B_RX_DATA)
     ret 
 READER_UART_A:
+    ; UART A
     in a, (UART_RX_AVAIL)
     or a
     jr z, READER_UART_A
@@ -340,26 +349,14 @@ HOMEE:
 
 SETTRKE:
     ld (BTRACK), bc
-    ;call print
-    ;db 'Track set'
-    ;db 13,10
-    ;db 0
     ret
 
 SETSECE:
     ld (BSECTOR), bc
-    ;call print
-    ;db 'Sector set'
-    ;db 13,10
-    ;db 0
     ret
 
 SETDMAE:
     ld (BDMA), bc
-    ;call print
-    ;db 'DMA set'
-    ;db 13,10
-    ;db 0
     ret
 
 READE:
@@ -372,8 +369,6 @@ READE:
     ; Copy data to DMA
     ld hl, (BDMA)
     ld a, (BSDPAGE)
-;    ld d, 0
-;read_sector_copy:
     out (SD_PAGE), a
     ld c, SD_DATA
 read_copy_loop: 
@@ -386,10 +381,6 @@ read_copy_loop:
     jr nz, read_copy_loop
 
     call sd_init
-    ;call print
-    ;db 'Read done'
-    ;db 13,10
-    ;db 0
     ret
 
 WRITEE:
