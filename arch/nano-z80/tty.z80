@@ -91,7 +91,7 @@ video_init:
     ld a,0
 video_init_delay:
     inc a
-    cp a, 50
+    cp a, 25
     jr nz, video_init_delay
     ret
    
