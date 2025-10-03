@@ -75,6 +75,8 @@ diskimage(
         "mkfs.com": "cpmtools+mkfs",
         "baudrate.com": "arch/nano-z80/tools+baudrate",
         "nanoterm.com": "arch/nano-z80/tools+nanoterm",
+        "colorfg.com": "arch/nano-z80/tools+colorfg",
+        "colorbg.com": "arch/nano-z80/tools+colorbg",
     },
 )
 

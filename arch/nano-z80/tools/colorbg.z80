@@ -1,0 +1,105 @@
+	maclib addresses
+
+IOBANK      = 0x7f
+IO_SELECT_VID = 0x04
+VID_BG_R = 0x13
+VID_BG_G = 0x14
+VID_BG_B = 0x15
+
+CPM_FCB = 0x005c
+
+	cseg
+	org 0x100
+        
+        ; Read hex color values from command line
+        ld hl, CPM_FCB
+        inc hl          ; Skip drive letter
+        ld ix, (bg_color)
+        ld b,0
+read_col:
+        ld a, (hl)
+        call hex_conv
+        ret c           ; Exit if failed
+        
+        ; Shift to high nibble
+        sla a
+        sla a
+        sla a
+        sla a
+        ; Store in RAM
+        ld (ix), a
+        
+        ; Read second digit
+        inc hl
+        ld a, (hl)
+        call hex_conv
+        ret c
+        or a, (ix)
+        ld (ix), a
+        inc ix
+        inc hl
+        
+        inc b
+        ld a,b
+        cp 3
+        jr nz, read_col
+        
+        ; Set color
+        ld ix, (bg_color)
+        ld a, IO_SELECT_VID
+        out (IOBANK), a
+        
+        ld a, (ix)
+        out (VID_BG_R), a
+        ld a, (ix+1)
+        out (VID_BG_G), a
+        ld a, (ix+2)
+        out (VID_BG_B), a
+        
+        ret 
+
+; Convert ASCII hex digit to number, print usage if not valid
+hex_conv:
+        cp '0'
+        jr c, print_usage
+hex_conv_a:
+        cp '9'
+        jr c, hex_conv_b
+        jr z, hex_conv_b
+        jr hex_conv_c
+hex_conv_b:
+        sub 0x30
+        or a ; Clear carry flag
+        ret
+hex_conv_c:
+        cp 'F'
+        jr c, hex_conv_d
+        jr z, hex_conv_d
+        jr print_usage
+hex_conv_d:
+        sub 0x37
+        or a ; Clear carry flag 
+        ret
+
+print_usage:
+        call print_string_inline
+        db "colorfg - set foreground color on the nano-z80 computer"
+        db 13,10
+        db "Usage: colorfg RRGGBB. Eg. colorfg FFFFFF for white text"
+        db 13,10, 0 
+        scf
+        ret
+
+print_string_inline:
+        pop hl
+        ld a,(hl)
+        inc hl
+        push hl
+        cp 0
+        ret z
+        ld c, a
+        call BBASE+0x0c ; CONOUT
+        jr print_string_inline
+
+bg_color:
+        db 0,0,0

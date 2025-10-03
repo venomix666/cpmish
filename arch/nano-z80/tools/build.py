@@ -10,6 +10,25 @@ zmac(
     ],
 )
 
+zmac(
+    name="colorfg",
+    relocatable=False,
+    src="./colorfg.z80",
+    deps=[
+        "arch/nano-z80+addresses",
+    ],
+)
+
+zmac(
+    name="colorbg",
+    relocatable=False,
+    src="./colorbg.z80",
+    deps=[
+        "arch/nano-z80+addresses",
+    ],
+)
+
+
 ackprogram(
     name="nanoterm",
     srcs=["./nanoterm.c", "./uart.s"],
