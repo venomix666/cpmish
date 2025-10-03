@@ -5,18 +5,19 @@ The [nano-z80](https://github.com/venomix666/nano-z80) is a Z80 based SoC for th
 
 What you get with this port:
 
-- 16x2 Mb drives on the SD-card
+- 14x4 MB drives on the SD-card
 - Most of an ADM-3a / Kaypro II terminal emulator supporting 80x30 text
-- A TPA of about 60kB
+- A TPA of 57 kB
 - Two serial ports, one on the built in USB UART and on a TTL UART header
 - A crude but functional terminal program with X-modem file transfer support
+- Utilities for changing baudrate and setting the display color
 - A fully implemented IO-byte which allows using monitor/keyboard or any of serial ports for the console.
 
 How to use it
 -------------
 Write `nano-z80.img` to a micro-SD card using `dd` and press `B` in the nano-z80 monitor to boot from the SD-card.
 
-By default, only drive `A:` is formatted. To use the additional drives, run `mkfs B:` up to `mkfs P:` to format the other drives once you have booted to CP/M.
+By default, only drive `A:` is formatted. To use the additional drives, run `mkfs B:` up to `mkfs N:` to format the other drives once you have booted to CP/M.
 
 UART B (the one on the TTL UART header) supports changing baudrates, this can be done either using the `baudrate.com` tool or from inside `nanoterm`.
 
@@ -43,7 +44,7 @@ As the monitor is diplayed both on the USB UART and the HDMI-output/USB-keyboard
 Who?
 ----
 
-This port and the nano-z80 project was made by [Henrik Löfgren](https://github.com/venomix666/).
+CP/Mish  was written David Given, and is covered under the terms of the whole CP/Mish project. See the documentation in the project root for more information. This port and the nano-z80 project was made by [Henrik Löfgren](https://github.com/venomix666/).
 
 
 
