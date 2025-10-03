@@ -4,8 +4,8 @@ from utils.build import unix2cpm
 from third_party.zmac.build import zmac
 from third_party.ld80.build import ld80
 
-(cbase, fbase, bbase) = cpm_addresses(name="addresses", bios_size=0x0800)
-#bbase = bbase + 0x200
+(cbase, fbase, bbase) = cpm_addresses(name="addresses", bios_size=0x0a00)
+
 zmac(name="boot", src="./boot.z80", relocatable=False)
 
 zmac(
@@ -38,7 +38,7 @@ ld80(
     objs={
         cbase: ["third_party/zcpr1"],
         fbase: ["third_party/zsdos"],
-        0xf800: [".+bios",".+tty",],
+        bbase: [".+bios",".+tty",],
     },
 )
 
@@ -50,7 +50,7 @@ simplerule(
     outs=["=bootfile.img"],
     commands=[
         "dd if={ins[0]} of={outs[0]} bs=128 count=1 2> /dev/null",
-        "dd if={ins[1]} of={outs[0]} bs=128 seek=4 skip=450 count=64 2> /dev/null",
+        "dd if={ins[1]} of={outs[0]} bs=128 seek=4 skip=446 count=64 2> /dev/null",
     ],
     label="nanoZ80",
 )

@@ -337,6 +337,46 @@ SELDSKE:
     ld hl, drive_d_dph          
     dec a                       ; Test for 3
     ret z
+   
+    ld hl, drive_e_dph
+    dec a                        ; Test for 4
+    ret z
+
+    ld hl, drive_f_dph          
+    dec a                       ; Test for 5
+    ret z
+    
+    ld hl, drive_g_dph
+    dec a                        ; Test for 6
+    ret z
+
+    ld hl, drive_h_dph          
+    dec a                       ; Test for 7
+    ret z
+    
+    ld hl, drive_i_dph
+    dec a                        ; Test for 8
+    ret z
+
+    ld hl, drive_j_dph          
+    dec a                       ; Test for 9
+    ret z
+    
+    ld hl, drive_k_dph
+    dec a                        ; Test for 10
+    ret z
+
+    ld hl, drive_l_dph          
+    dec a                       ; Test for 11
+    ret z
+   
+    ld hl, drive_m_dph
+    dec a                        ; Test for 12
+    ret z
+
+    ld hl, drive_n_dph          
+    dec a                       ; Test for 13
+    ret z
     
     ld a, b                     ; Don't change disk 
     ld (BDISK), a
@@ -525,6 +565,86 @@ drive_d_dph:
     dw 0            ; Disk change check vector
     dw drive_d_bitmap ; Allocation bitmap
 
+drive_e_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_e_bitmap ; Allocation bitmap
+
+drive_f_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_f_bitmap ; Allocation bitmap
+
+drive_g_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_g_bitmap ; Allocation bitmap
+
+drive_h_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_h_bitmap ; Allocation bitmap
+
+drive_i_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_i_bitmap ; Allocation bitmap
+
+drive_j_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_j_bitmap ; Allocation bitmap
+
+drive_k_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_k_bitmap ; Allocation bitmap
+
+drive_l_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_l_bitmap ; Allocation bitmap
+
+drive_m_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_m_bitmap ; Allocation bitmap
+
+drive_n_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_n_bitmap ; Allocation bitmap
+
 ; Boot disk
 label DRVADPB
     dw 64           ; Number of CP/M sectors per track
@@ -556,7 +676,26 @@ drive_c_bitmap:
     ds (DRIVE_B_BLOCKS+7) / 8
 drive_d_bitmap:
     ds (DRIVE_B_BLOCKS+7) / 8
-
+drive_e_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_f_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_g_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_h_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_i_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_j_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_k_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_l_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_m_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_n_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
 
 dirbuf:
     ds 128

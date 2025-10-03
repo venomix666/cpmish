@@ -69,7 +69,7 @@ SD_DATA         equ $80         ; Start of data page ($80-$FF)
 
 ; Disk definitions
 DRIVE_A_SIZE = 4*1024             ; kB
-DRIVE_A_BLOCKS = DRIVE_A_SIZE / 16 ;/ 2 ; 2 kB blocks 
+DRIVE_A_BLOCKS = DRIVE_A_SIZE / 16 ; 16 kB blocks 
 
 DRIVE_B_SIZE = 4*1024		; kB
 DRIVE_B_BLOCKS = DRIVE_B_SIZE / 16 ; 16 kB blocks

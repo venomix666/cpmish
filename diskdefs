@@ -91,17 +91,6 @@ diskdef brother-powernote
 	os 2.2
 end
 
-# Generic 1 Meg image used for the nanoZ80
-diskdef generic-1m
-    seclen 512
-    tracks 128
-    sectrk 16
-    blocksize 2048
-    maxdir 128
-    boottrk 1
-    os 2.2
-end
-
 # 4 Meg format used for the nanoZ80
 diskdef nanoz80
     seclen 512
