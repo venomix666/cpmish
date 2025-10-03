@@ -83,9 +83,9 @@ hex_conv_d:
 
 print_usage:
         call print_string_inline
-        db "colorfg - set foreground color on the nano-z80 computer"
+        db "colorbg - set background color on the nano-z80 computer"
         db 13,10
-        db "Usage: colorfg RRGGBB. Eg. colorfg FFFFFF for white text"
+        db "Usage: colorbg RRGGBB. Eg. colorfg FFFFFF for white background"
         db 13,10, 0 
         scf
         ret
