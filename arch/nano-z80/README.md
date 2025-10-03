@@ -21,6 +21,11 @@ By default, only drive `A:` is formatted. To use the additional drives, run `mkf
 
 UART B (the one on the TTL UART header) supports changing baudrates, this can be done either using the `baudrate.com` tool or from inside `nanoterm`.
 
+If you put the SD-card in a SD-card reader on a Linux machine, the diskdefs file in the
+cpmish root allows you to read and write files to the A: drive, e.g.:
+
+    cpmcp -f nanoz80 -i /dev/sdf 0:oncpm onlinux
+
 Modifying the IO byte at boot
 --------------
 The IO is mapped in the following way:
@@ -28,7 +33,7 @@ The IO is mapped in the following way:
 - TTY/LPT: UART header on carrier board
 - PTP/PTR/UC1: USB UART on Tang Nano 20k board
 
-The default value is 0x81, so that the HDMI output and USB keyboard is used for the console. It can be modified according to the table below before booting by first loading to image from the SD-card using the `L` command in the monitor and then writing to address 0xF833 by running for instance `WF833,83` to redirect the console to the USB UART, and then booting by running `JF800`. 
+The default value is 0x81, so that the HDMI output and USB keyboard is used for the console. It can be modified according to the table below before booting by first loading to image from the SD-card using the `L` command in the monitor and then writing to address 0xF833 by running for instance `WF633,83` to redirect the console to the USB UART, and then booting by running `JF600`. 
 
 As the monitor is diplayed both on the USB UART and the HDMI-output/USB-keyboard by default, this can be useful when running with no external display connected.
 ```
