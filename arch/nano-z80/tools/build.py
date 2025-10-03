@@ -28,6 +28,15 @@ zmac(
     ],
 )
 
+zmac(
+    name="cls",
+    relocatable=False,
+    src="./cls.z80",
+    deps=[
+        "arch/nano-z80+addresses",
+    ],
+)
+
 
 ackprogram(
     name="nanoterm",
