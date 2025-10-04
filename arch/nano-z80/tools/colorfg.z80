@@ -14,7 +14,7 @@ CPM_FCB = 0x005c
         ; Read hex color values from command line
         ld hl, CPM_FCB
         inc hl          ; Skip drive letter
-        ld ix, (fg_color)
+        ld de, fg_color
         ld b,0
 read_col:
         ld a, (hl)
@@ -27,16 +27,18 @@ read_col:
         sla a
         sla a
         ; Store in RAM
-        ld (ix), a
+        ld (de), a
         
         ; Read second digit
         inc hl
         ld a, (hl)
         call hex_conv
         ret c
-        or a, (ix)
-        ld (ix), a
-        inc ix
+        ld c, a
+        ld a, (de)
+        or a, c
+        ld (de), a
+        inc de
         inc hl
         
         inc b
@@ -45,15 +47,17 @@ read_col:
         jr nz, read_col
         
         ; Set color
-        ld ix, (fg_color)
+        ld de, fg_color
         ld a, IO_SELECT_VID
         out (IOBANK), a
         
-        ld a, (ix)
+        ld a, (de)
         out (VID_FG_R), a
-        ld a, (ix+1)
+        inc de
+        ld a, (de)
         out (VID_FG_G), a
-        ld a, (ix+2)
+        inc de
+        ld a, (de)
         out (VID_FG_B), a
         
         ret 
