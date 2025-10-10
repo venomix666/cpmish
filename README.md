@@ -43,6 +43,7 @@ Currently it supports these platforms:
   - [the Brother WP-2450DS typewriter (and probably others)](arch/brother/wp2450/README.md)
   - [the Brother PN-8510MDS SuperPowerNote laptop (and probably others)](arch/brother/pn8510/README.md)
   - [the Brother PN-8800FXB SuperPowerNote laptop (and probably others)](arch/brother/pn8800/README.md)
+  - [the nano-z80 SoC for the Tang Nano 20k FPGA board](arch/nano-z80/README.md)
 
 (Some of these are pretty stale due to difficulty of testing and may not work.
 Later entries are newer! If you have any problems, please report bugs.)

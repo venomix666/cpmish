@@ -57,6 +57,10 @@ extern void con_revoff(void);
     #define SCREENWIDTH 80
     #define SCREENHEIGHT 24
     #define LIBCUSS_ROBOTRON
+#elif defined LIBCUSS_NANOZ80
+	#define SCREENWIDTH 80
+	#define SCREENHEIGHT 30
+	#define LIBCUSS_ADM3
 #else
     #error "No libcuss configuration specified."
 #endif

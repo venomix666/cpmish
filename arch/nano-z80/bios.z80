@@ -1,0 +1,715 @@
+; nano-z80 cpmish BIOS © 2025 Henrik Löfgren
+; This file is distributable under the terms of the 2-clause BSD license.
+; See COPYING.cpmish in the distribution root directory for more information.
+
+    maclib cpm
+    maclib nano-z80
+    maclib cpmish
+    maclib addresses
+    extern TTYPUTC
+    extern TTYINIT
+    cseg
+;label BBASE
+
+; BIOS jump table.
+
+    jp BOOTE
+    jp WBOOTE
+    jp CONSTE
+    jp CONINE
+    jp CONOUTE
+    jp LISTE
+    jp PUNCHE
+    jp READERE
+    jp HOMEE
+    jp SELDSKE
+    jp SETTRKE
+    jp SETSECE
+    jp SETDMAE
+    jp READE
+    jp WRITEE
+    jp LISTSTE
+    jp SECTRANE
+
+; Default IOBYTE
+; The IO is mapped in the following way:
+; CRT: USB keyboard and HDMI output
+; TTY/LPT: UART header on carrier board
+; PTP/PTR/UC1: USB UART on Tang Nano 20k board
+;
+;                      LIST    PUNCH    READER    CONSOLE
+; 0x81 - 10 00 00 01 - LPT:    TTY:     TTY:      CRT:
+; 0x95 - 10 01 01 01 - LPT:    PTP:     PTR:      CRT:       
+; 0x80 - 10 00 00 00 - LPT:    TTY:     TTY:      TTY:
+; 0x83 - 10 00 00 11 - LTP:    TTY:     TTY:      UC1:
+; 0x97 - 10 01 01 11 - LTP:    PTP:     PTR:      UC1:
+ioconfig: db 0x81
+
+; Actual BIOS entrypoints.
+;
+; The BIOS calls typically use a simple calling convention where the parameter
+; is in BC and the result is returned in A and HL. The docs don't mention
+; anything about other registers so we'll assume they can be corrupted. In
+; addition, our syscall stuff assumes that on return A = L, just like in the
+; BDOS, so we have a single parameter and a single response --- all very simple.
+        
+; Cold boot on system startup.
+BOOTE:
+    di
+    ld a, 0x01
+    out (ROM_DISABLE), a     ; disable ROM
+    ld sp, 0x0100            ; ephemeral startup stack
+    ei
+
+    ld a, (ioconfig)         ; set default IOBYTE
+    ld (IOBYTE), a
+    
+    xor a
+    ld (CDISK), a            ; clear current disk / user
+
+    call TTYINIT
+    call print
+    db 0x1a                  ; clear screen
+    cpmish_banner 'nanoZ80'
+    db 0
+    ; fall through
+call_ccp:
+    ld a, 0xc3
+    ld hl, BBASE + 3         ; init BIOS entrypoint
+    ld (0x0000), a
+    ld (0x0001), hl
+
+    ld hl, FBASE + 6         ; init BDOS entrypoint
+    ld (0x0005), a
+    ld (0x0006), hl
+
+    ld a, (CDISK)            ; current selected disk
+    ld c, a
+    jp CBASE                 ; pass control to CCP
+
+; Warm boot on application exit.
+WBOOTE:
+    ld sp, 0x0100            ; ephemeral user stack
+
+    ld c, 0                  ; select drive 0
+    call SELDSKE
+    ld bc, 0
+    call SETTRKE             ; select track 0
+    
+    ld hl, CBASE             ; location to load
+    ld bc, 4                 ; first sector to load
+
+    ; Reload OS from disk
+boot_loop:
+    push bc
+    push hl
+
+    call SETSECE             ; set sector to load
+
+    pop bc                   ; DMA address into BC
+    push bc
+    call SETDMAE             ; set address
+    call READE               ; actually load the sector
+
+    pop hl                   ; DMA address back into HL
+    ld bc, 128
+    add hl, bc
+
+    pop bc                   ; current sector back into bc
+    ld a, c
+    inc c
+    cp 56                    ; end of track 0
+    jr nz, boot_loop
+    jr call_ccp
+
+; CONST
+CONSTE:
+    ld a, (IOBYTE)
+    and 0x03 ; Mask console bits
+    cp 0
+    jr nz, CONST_2
+    ; UART B
+    ld a, IO_SELECT_UART
+    out (IO_BANK), a
+    in a, (UART_B_RX_AVAIL)
+    or a
+    jr nz, CONST_AVAIL
+    ret
+CONST_2:
+    cp 0x03
+    jr nz, CONST_3
+    ; UART A
+    in a, (UART_RX_AVAIL)
+    or a
+    jr nz, CONST_AVAIL
+    ret
+CONST_3:
+    ; CRT
+    in a, (KB_AVAIL)
+    or a
+    ret z
+
+CONST_AVAIL:
+    ld a, 0xff
+
+    ret
+
+; CONIN
+CONINE:
+    ld a, (IOBYTE)
+    and 0x03 ; Mask console bits
+    cp 0
+    jr nz, CONIN_2
+UART_B_CONIN:
+    ; UART B
+    ld a, IO_SELECT_UART
+    out (IO_BANK), a
+    in a, (UART_B_RX_AVAIL)
+    or a
+    jr z, UART_B_CONIN
+    in a, (UART_B_RX_DATA)
+    ret
+CONIN_2:
+    cp 0x03
+    jr nz, CONINEUSB
+UART_A_CONIN:
+    ; UART A
+    in a, (UART_RX_AVAIL)
+    or a
+    jr z, UART_A_CONIN
+
+    in a, (UART_RX_DATA)
+    ret
+    ; Default to CRT:
+CONINEUSB:
+    in a, (KB_AVAIL)
+    or a
+    jr z, CONINEUSB
+    in a, (KB_CHAR)
+    ret
+
+; CONOUT
+CONOUTE:
+    ld a, (IOBYTE)
+    and 0x03 ; Mask console bits
+    cp 0
+    jr nz, CONOUT_2
+UART_B_CONOUT:
+    ; UART B
+    ld a, IO_SELECT_UART
+    out (IO_BANK), a
+    in a, (UART_B_TX_READY)
+    bit 0, a
+    jr z, UART_B_CONOUT
+    ld a, c
+    and 0x7f ; Remove highest bit
+    out (UART_B_TX_DATA), a
+    ret
+CONOUT_2:
+    cp 0x03
+    jr nz, CONOUT_3
+UART_A_CONOUT:
+    ; UART A 
+    in a, (UART_TX_READY)
+    bit 0, a
+    jr z, UART_A_CONOUT 
+    ld a,c
+    and 0x7f ; Remove highest bit
+    out (UART_TX_DATA),a
+    ret
+CONOUT_3:
+    ; Default to CRT
+    ld a,c
+    and 0x7f ; Remove highest bit
+    ;out (VID_WRITE_X),a
+    jp TTYPUTC
+    ret
+
+; LIST
+LISTE:
+    ld a,(IOBYTE)
+    and 0xc0 ; Mask list bits
+    ; Send to UART B unless CRT: is selected
+    cp 0x40
+    jr nz, LIST_UART_B
+    ld a, c
+    out (VID_WRITE_X),a
+    ret
+LIST_UART_B:
+    ld a,IO_SELECT_UART
+    out (IO_BANK), a
+    in a, (UART_B_TX_READY)
+    or a
+    jr z, LIST_UART_B
+    ld a, c
+    out (UART_B_TX_DATA), a
+    ret
+
+; PUNCH
+PUNCHE:
+    ld a, (IOBYTE)
+    and 0x30 ; Mask punch bits
+    or a
+    jr nz, PUNCH_UART_A
+    ld a, IO_SELECT_UART
+    out (IO_BANK), a
+PUNCH_UART_B:
+    ; UART B
+    in a, (UART_B_TX_READY)
+    or a
+    jr z, PUNCH_UART_B
+         
+    ld a, c
+    out (UART_B_TX_DATA), a
+    ret
+PUNCH_UART_A:
+    ; UART A
+    in a, (UART_TX_READY)
+    or a
+    jr z, PUNCH_UART_A
+    
+    ld a, c
+    out (UART_TX_DATA), a
+    ret
+
+; LIST
+LISTSTE:
+    ld a, (IOBYTE)
+    and 0xc0 ; Mask list bits
+    cp 0x40
+    jr nz, LISTST_UART_B
+    ; CRT is always ready
+    ld a, 0xff
+    ret
+LISTST_UART_B:
+    ld a, IO_SELECT_UART
+    out (IO_BANK), a
+    in a, (UART_B_TX_READY)
+    or a
+    ret z
+    ld a, 0xff
+    ret
+
+; READER
+READERE:
+    ld a, (IOBYTE)
+    and 0x0c ; Mask reader bits
+    or a
+    jr nz, READER_UART_A
+    ld a, IO_SELECT_UART
+    out (IO_BANK), a
+READER_UART_B:
+    ; UART B
+    in a, (UART_B_RX_AVAIL)
+    or a
+    jr z, READER_UART_B
+    
+    in a, (UART_B_RX_DATA)
+    ret 
+READER_UART_A:
+    ; UART A
+    in a, (UART_RX_AVAIL)
+    or a
+    jr z, READER_UART_A
+    
+    in a, (UART_RX_DATA)
+    ret
+; Selects a drive, returning the address of the DPH in HL (or 0x0000 on
+; error).
+SELDSKE:
+    ld a, (BDISK)
+    ld b, a
+    ld a, c
+    ld (BDISK), a 
+    
+    ld hl, drive_a_dph
+    or a                        ; Test for 0
+    ret z
+
+    ld hl, drive_b_dph          
+    dec a                       ; Test for 1
+    ret z
+    
+    ld hl, drive_c_dph
+    dec a                        ; Test for 2
+    ret z
+
+    ld hl, drive_d_dph          
+    dec a                       ; Test for 3
+    ret z
+   
+    ld hl, drive_e_dph
+    dec a                        ; Test for 4
+    ret z
+
+    ld hl, drive_f_dph          
+    dec a                       ; Test for 5
+    ret z
+    
+    ld hl, drive_g_dph
+    dec a                        ; Test for 6
+    ret z
+
+    ld hl, drive_h_dph          
+    dec a                       ; Test for 7
+    ret z
+    
+    ld hl, drive_i_dph
+    dec a                        ; Test for 8
+    ret z
+
+    ld hl, drive_j_dph          
+    dec a                       ; Test for 9
+    ret z
+    
+    ld hl, drive_k_dph
+    dec a                        ; Test for 10
+    ret z
+
+    ld hl, drive_l_dph          
+    dec a                       ; Test for 11
+    ret z
+   
+    ld hl, drive_m_dph
+    dec a                        ; Test for 12
+    ret z
+
+    ld hl, drive_n_dph          
+    dec a                       ; Test for 13
+    ret z
+    
+    ld a, b                     ; Don't change disk 
+    ld (BDISK), a
+    ld hl, 0
+    ret
+
+HOMEE:
+    ld bc, 0
+    ; fall through
+
+SETTRKE:
+    ld (BTRACK), bc
+    ret
+
+SETSECE:
+    ld (BSECTOR), bc
+    ret
+
+SETDMAE:
+    ld (BDMA), bc
+    ret
+
+READE:
+    call sd_init
+    call calc_sd_addr
+    ; Read strobe
+    ld a,0
+    out (SD_READ),a
+    call sd_wait
+    ; Copy data to DMA
+    ld hl, (BDMA)
+    ld a, (BSDPAGE)
+    out (SD_PAGE), a
+    ld c, SD_DATA
+read_copy_loop: 
+    in a, (c)
+    ld (hl), a
+    inc hl
+    inc c
+    ld a, c
+    cp a, 0
+    jr nz, read_copy_loop
+
+    call sd_init
+    ret
+
+WRITEE:
+    call sd_init
+    call calc_sd_addr
+
+    ; Read full page first
+    ld a, 0
+    out (SD_READ),a
+    call sd_wait
+
+    ; Copy data from DMA
+    ld hl, (BDMA)
+    ld a, (BSDPAGE)
+    out (SD_PAGE), a
+    ld c, SD_DATA
+write_copy_loop:
+    ld a, (hl)
+    out (c), a
+    inc hl
+    inc c
+    ld a, c
+    cp a, 0
+    jr nz, write_copy_loop
+
+    ; Write strobe
+    ld a,0
+    out (SD_WRITE),a
+    call sd_wait
+
+    ret
+
+SECTRANE:
+    ld h, b
+    ld l, c
+    ret
+
+call_hl:
+    jp (hl)
+
+; Prints the text immediately following the call to print.
+print:
+    pop hl                   ; return address points to text to print
+    ld a, (hl)
+    inc hl
+    push hl                  ; save address after current char
+
+    or a
+    ret z                    ; if byte was zero, return
+    ld c, a
+    call CONOUTE
+    jr print
+
+; Calculate the SD-card sector address
+calc_sd_addr:
+    ; Store current disk in E register for later
+    ld a, (BDISK)
+    ld e, a
+    ; Load the current track
+    ld hl, (BTRACK)
+    ld d, 0
+    ; Multiply by 16
+    ld b,4
+
+shift_loop:
+    add hl,hl
+    rl d
+    djnz shift_loop
+
+    ; Add the sector divided by 4
+    ld bc, (BSECTOR)
+    ld a,c
+    and a,0x03
+    ld (BSDPAGE),a
+    sra b
+    rr  c
+    sra b
+    rr  c
+    add hl,bc
+    jp nc, no_carry_sector
+    inc d
+no_carry_sector:
+    ; Add SD-card address offset and store
+    ld a, SD_OFFSET_3
+    out (SD_ADDR_3),a
+
+    ld bc, SD_OFFSET_0+SD_OFFSET_1*256
+    add hl, bc
+    jp nc, no_carry_add
+    inc d
+no_carry_add:
+    ld a, d
+    add a, e ; Add disk number
+    add a, SD_OFFSET_2
+    out (SD_ADDR_2),a
+    ld a,h
+    out (SD_ADDR_1),a
+    ld a,l
+    out (SD_ADDR_0),a
+    
+    ret
+
+sd_init:
+    ld a, IO_SELECT_SD
+    out (IO_BANK), a
+    ; Fall through
+sd_wait:
+    in a, (SD_BUSY)
+    cp a, 0
+    jr nz, sd_wait
+    ret
+
+drive_a_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVADPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_a_bitmap ; Allocation bitmap
+
+drive_b_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_b_bitmap ; Allocation bitmap
+
+drive_c_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_c_bitmap ; Allocation bitmap
+
+drive_d_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_d_bitmap ; Allocation bitmap
+
+drive_e_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_e_bitmap ; Allocation bitmap
+
+drive_f_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_f_bitmap ; Allocation bitmap
+
+drive_g_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_g_bitmap ; Allocation bitmap
+
+drive_h_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_h_bitmap ; Allocation bitmap
+
+drive_i_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_i_bitmap ; Allocation bitmap
+
+drive_j_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_j_bitmap ; Allocation bitmap
+
+drive_k_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_k_bitmap ; Allocation bitmap
+
+drive_l_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_l_bitmap ; Allocation bitmap
+
+drive_m_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_m_bitmap ; Allocation bitmap
+
+drive_n_dph:
+    dw 0            ; Sector translation vector
+    dw 0, 0, 0      ; BDOS scratchpad
+    dw dirbuf       ; Directory scratchpad
+    dw DRVBDPB      ; Drive parameter block
+    dw 0            ; Disk change check vector
+    dw drive_n_bitmap ; Allocation bitmap
+
+; Boot disk
+label DRVADPB
+    dw 64           ; Number of CP/M sectors per track
+    db 7, 127       ; BSH/BLM for 16384-byte blocks
+    db 7            ; EXM for 16384-byte allocation units and >255 blocks
+    dw DRIVE_A_BLOCKS-1 ; DSM
+    dw 511          ; DRM, one fewer than the number of directory entries
+    db 0x80, 0x00   ; Initial allocation vector for one directory block
+    dw 0            ; Size of disk change check vector: zero as this is a fixed disk
+    dw 1            ; Number of reserved tracks
+
+; Other disks
+label DRVBDPB
+    dw 64
+    db 7, 127
+    db 7
+    dw DRIVE_B_BLOCKS-1
+    dw 511
+    db 0x80, 0x00
+    dw 0
+    dw 0 
+
+
+drive_a_bitmap:
+    ds (DRIVE_A_BLOCKS+7) / 8
+drive_b_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_c_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_d_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_e_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_f_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_g_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_h_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_i_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_j_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_k_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_l_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_m_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+drive_n_bitmap:
+    ds (DRIVE_B_BLOCKS+7) / 8
+
+dirbuf:
+    ds 128
+
+label BDISK 
+    db 0
+label BTRACK
+    dw 0
+label BSECTOR
+    dw 0
+label BSDPAGE
+    dw 0
+label BDMA
+    dw 0
+
+
+

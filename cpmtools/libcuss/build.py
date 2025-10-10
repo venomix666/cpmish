@@ -10,6 +10,7 @@ libcuss_terminals = [
     "BROTHER_POWERNOTE",
     "SPECTRUM_PLUS_THREE",
     "SPECTRUM_NEXT",
+    "NANOZ80",
 ]
 
 for terminal in libcuss_terminals:
@@ -28,4 +29,4 @@ def libcuss_ackprogram(name, deps=[], cflags=[], **kwargs):
             deps=deps + ["cpmtools/libcuss+libcuss_" + terminal],
             cflags=["-DLIBCUSS_"+terminal] + cflags,
             **kwargs
-        )
+            )

@@ -1,0 +1,28 @@
+; nano-z80 cpmish BIOS © 2025 Henrik Löfgren
+; This file is distributable under the terms of the 2-clause BSD license.
+; See COPYING.cpmish in the distribution root directory for more information.
+
+; This is the boot sector setting where to load from the SD card and where in
+; RAM to place the image
+
+        ; Magic numbers
+        db 0x6e
+        db 0x61
+        db 0x6e
+        db 0x6f
+
+        ; Image SD card sector
+        db 0x00
+        db 0x00
+        db 0x00
+        db 0x01
+
+        ; Image length
+        db 0x0f
+
+        ; RAM page to load to
+        db 0xe0
+
+        ; RAM page to boot from
+        db 0xf6
+        

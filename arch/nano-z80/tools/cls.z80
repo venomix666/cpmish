@@ -1,0 +1,10 @@
+	maclib addresses
+
+	cseg
+	org 0x100
+        
+        ld a, 0x1a
+        ld c, a
+        call BBASE+0x0c ; CONOUT
+        ret 
+

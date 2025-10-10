@@ -1,0 +1,116 @@
+	maclib addresses
+
+IOBANK      = 0x7f
+IO_SELECT_UART = 0x05
+UART_B_BAUD = 0x08
+
+
+	cseg
+	org 0x100
+        
+        call print_string_inline
+        db "nano-z80 baud rate tool"
+        db 13,10
+        db 13,10
+        db "Current baudrate setting: "
+        db 0
+        ; Print the current setting
+	ld a, IO_SELECT_UART 
+	out (IOBANK), a
+        in a,(UART_B_BAUD)
+
+        cp 0
+        jr nz, check9600
+        call print_string_inline
+        db "4800"
+        db 0
+        jr check_done
+check9600:
+        cp 1
+        jr nz, check19200
+        call print_string_inline
+        db "9600"
+        db 0
+        jr check_done
+check19200:
+        cp 2
+        jr nz, check38400
+        call print_string_inline
+        db "19200"
+        db 0
+        jr check_done
+check38400:
+        cp 3
+        jr nz, check57600
+        call print_string_inline
+        db "38400"
+        db 0
+        jr check_done
+check57600:
+        cp 4
+        jr nz, check115200
+        call print_string_inline
+        db "57600"
+        db 0
+        jr check_done
+check115200:
+        ; No check needed
+        call print_string_inline
+        db "115200"
+        db 0
+check_done:
+        call print_string_inline
+        db 13,10,13,10
+        db "Please select new baudrate:"
+        db 13,10
+        db "1: 4800"
+        db 13,10
+        db "2: 9600"
+        db 13,10
+        db "3: 19200"
+        db 13,10
+        db "4: 38400"
+        db 13,10
+        db "5: 57600"
+        db 13,10
+        db "6: 115200"
+        db 13,10,0
+
+        ; Get input
+        call BBASE+0x09 ; CONIN
+        cp '1'
+        jr c, illegal_input
+        cp '7'
+        jr c, accepted_input
+        jr illegal_input
+accepted_input:
+        dec a
+        ld b, a
+        ld a, IO_SELECT_UART 
+	out (IOBANK), a
+        ld a, b
+        out (UART_B_BAUD), a
+        call print_string_inline
+        db 13,10
+        db "Baudrate updated"
+        db 0
+        ret
+
+illegal_input:
+        call print_string_inline
+        db 13,10
+        db "Illegal selection"
+        db 0
+        ret
+print_string_inline:
+        pop hl
+        ld a,(hl)
+        inc hl
+        push hl
+        cp 0
+        ret z
+        ld c, a
+        call BBASE+0x0c ; CONOUT
+        jr print_string_inline
+
+
