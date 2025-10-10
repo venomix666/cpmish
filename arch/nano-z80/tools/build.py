@@ -37,6 +37,14 @@ zmac(
     ],
 )
 
+zmac(
+    name="arrowkey",
+    relocatable=False,
+    src="./arrowkey.z80",
+    deps=[
+        "arch/nano-z80+addresses",
+    ],
+)
 
 ackprogram(
     name="nanoterm",

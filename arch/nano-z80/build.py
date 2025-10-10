@@ -78,6 +78,7 @@ diskimage(
         "colorfg.com": "arch/nano-z80/tools+colorfg",
         "colorbg.com": "arch/nano-z80/tools+colorbg",
         "cls.com" : "arch/nano-z80/tools+cls",
+        "arrowkey.com" : "arch/nano-z80/tools+arrowkey",
         },
 )
 

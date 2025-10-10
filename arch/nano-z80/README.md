@@ -21,6 +21,8 @@ By default, only drive `A:` is formatted. To use the additional drives, run `mkf
 
 UART B (the one on the TTL UART header) supports changing baudrates, this can be done either using the `baudrate.com` tool or from inside `nanoterm`.
 
+The USB keyboard arrow key configuration defaults to ADM3A key codes. This can be changed to WordStar or EMACS/MINCE key codes with the `arrowkey.com` tool.
+
 If you put the SD-card in a SD-card reader on a Linux machine, the diskdefs file in the
 cpmish root allows you to read and write files to the A: drive, e.g.:
 

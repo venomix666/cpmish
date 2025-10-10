@@ -1,0 +1,96 @@
+	maclib addresses
+
+IOBANK      = 0x7f
+IO_SELECT_USB = 0x02
+USB_ARROWKEY = 0x0b
+
+
+	cseg
+	org 0x100
+        
+        call print_string_inline
+        db "nano-z80 arrow key configuration tool"
+        db 13,10
+        db 13,10
+        db "Current arrow key setting: "
+        db 0
+        ; Print the current setting
+	ld a, IO_SELECT_USB 
+	out (IOBANK), a
+        in a,(USB_ARROWKEY)
+
+        cp 0
+        jr nz, checkws
+        call print_string_inline
+        db "ADM3A"
+        db 0
+        jr check_done
+checkws:
+        cp 1
+        jr nz, checkemacs
+        call print_string_inline
+        db "WordStar"
+        db 0
+        jr check_done
+checkemacs:
+        cp 2
+        jr nz, check_3
+        call print_string_inline
+        db "EMACS/MINCE"
+        db 0
+        jr check_done
+check_3:
+       ; No check needed
+        call print_string_inline
+        db "ADM3A (redundant)"
+        db 0
+check_done:
+        call print_string_inline
+        db 13,10,13,10
+        db "Please select new configuration:"
+        db 13,10
+        db "1: ADM3A"
+        db 13,10
+        db "2: WordStar"
+        db 13,10
+        db "3: EMACS/MINCE"
+        db 13,10,0
+
+        ; Get input
+        call BBASE+0x09 ; CONIN
+        cp '1'
+        jr c, illegal_input
+        cp '4'
+        jr c, accepted_input
+        jr illegal_input
+accepted_input:
+        dec a
+        ld b, a
+        ld a, IO_SELECT_USB 
+	out (IOBANK), a
+        ld a, b
+        out (USB_ARROWKEY), a
+        call print_string_inline
+        db 13,10
+        db "Configuration updated"
+        db 0
+        ret
+
+illegal_input:
+        call print_string_inline
+        db 13,10
+        db "Illegal selection"
+        db 0
+        ret
+print_string_inline:
+        pop hl
+        ld a,(hl)
+        inc hl
+        push hl
+        cp 0
+        ret z
+        ld c, a
+        call BBASE+0x0c ; CONOUT
+        jr print_string_inline
+
+
