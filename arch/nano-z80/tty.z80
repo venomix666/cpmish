@@ -92,6 +92,7 @@ video_init:
     ld b,37
 video_init_delay:
     in a, (VID_BUSY)
+    or a
     ret z
     djnz video_init_delay
     ret
