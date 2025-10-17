@@ -84,19 +84,14 @@ tty_clear_to_eos:
     out (VID_CLEAR_TO_EOS), a
     ret ;jp tty_update_cursor
 
-; Add a timeout as just checking the busy flag gets stuck sometimes
-; for unknows reasons
 video_init:
     ld a, IO_SELECT_VID
     out (IO_BANK), a
-    ld b,37
-video_init_delay:
+video_init_wait:
     in a, (VID_BUSY)
     or a
-    ret z
-    djnz video_init_delay
+    jr nz, video_init_wait
     ret
-   
 
 ; vim: ts=4 sw=4 et ft=asm
 
